@@ -1,0 +1,14 @@
+{
+  "name": "fiap-garageflow-lambda-auth",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for CPF authentication and JWT generation",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --check index.js"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "mssql": "^11.0.1"
+  }
+}
