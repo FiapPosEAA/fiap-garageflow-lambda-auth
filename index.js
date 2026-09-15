@@ -30,7 +30,7 @@ exports.handler = async (event) => {
   try {
     const payload = typeof event.body === 'string' ? JSON.parse(event.body) : event;
     const cpf = normalizeCpf(payload.cpf || payload.document);
-
+    console.log("teste")
     if (!isValidCpf(cpf)) {
       return {
         statusCode: 401,
@@ -51,11 +51,12 @@ exports.handler = async (event) => {
         trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true'
       }
     });
+    console.log("after pool");
     const result = await pool.request()
       .input('document', sql.VarChar(20), cpf)
-      .query('SELECT TOP 1 id, name, document, is_active FROM customers WHERE document = @document');
+      .query('SELECT TOP 1 id, name, document, isActive FROM customers WHERE document = @document');
     await pool.close();
-
+console.log(result);
     if (result.rows.length === 0) {
       return {
         statusCode: 401,
@@ -64,7 +65,7 @@ exports.handler = async (event) => {
     }
 
     const customer = result.rows[0];
-    if (customer.is_active === false) {
+    if (customer.isActive === false) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Cliente inativo.' })
@@ -84,6 +85,7 @@ exports.handler = async (event) => {
         issuer: process.env.JWT_ISSUER || 'GarageFlowService'
       }
     );
+    console.info(token);
 
     return {
       statusCode: 200,
@@ -98,6 +100,7 @@ exports.handler = async (event) => {
       })
     };
   } catch (error) {
+    console.error(error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message || 'Erro interno na autenticação.' })
