@@ -44,6 +44,8 @@ exports.handler = async (event) => {
       database: process.env.DB_NAME,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
+      connectionTimeout: 60000,
+      requestTimeout: 60000,
       options: {
         encrypt: process.env.DB_ENCRYPT !== 'false',
         trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true'
