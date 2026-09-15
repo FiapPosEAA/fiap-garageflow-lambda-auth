@@ -57,14 +57,14 @@ exports.handler = async (event) => {
       .query('SELECT TOP 1 id, name, document, isActive FROM customers WHERE document = @document');
     await pool.close();
 console.log(result);
-    if (result.rows.length === 0) {
+    if (result.recordset.length === 0) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Cliente não encontrado.' })
       };
     }
 
-    const customer = result.rows[0];
+    const customer = result.recordset[0];
     if (customer.isActive === false) {
       return {
         statusCode: 401,
