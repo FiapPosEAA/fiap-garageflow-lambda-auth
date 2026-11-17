@@ -23,7 +23,20 @@ data "archive_file" "lambda" {
   type        = "zip"
   source_dir  = path.module
   output_path = "${path.module}/lambda-auth.zip"
-  excludes    = ["terraform.tfstate", "terraform.tfstate.backup", ".terraform", "lambda-auth.zip"]
+  # node_modules is kept: jsonwebtoken and mssql are runtime dependencies.
+  excludes = [
+    ".git",
+    ".github",
+    ".gitignore",
+    ".terraform",
+    ".terraform.lock.hcl",
+    "*.tfstate",
+    "*.tfstate.*",
+    "*.tf",
+    "Dockerfile",
+    "README.md",
+    "lambda-auth.zip",
+  ]
 }
 
 resource "aws_iam_role" "lambda" {
@@ -66,15 +79,15 @@ resource "aws_lambda_function" "auth" {
 
   environment {
     variables = {
-      DB_HOST                       = var.db_host
-      DB_PORT                       = tostring(var.db_port)
-      DB_NAME                       = var.db_name
-      DB_USER                       = var.db_user
-      DB_PASSWORD                   = var.db_password
-      DB_ENCRYPT                    = "true"
-      DB_TRUST_SERVER_CERTIFICATE  = "false"
-      JWT_SECRET                    = var.jwt_secret
-      JWT_ISSUER                    = var.jwt_issuer
+      DB_HOST                     = var.db_host
+      DB_PORT                     = tostring(var.db_port)
+      DB_NAME                     = var.db_name
+      DB_USER                     = var.db_user
+      DB_PASSWORD                 = var.db_password
+      DB_ENCRYPT                  = "true"
+      DB_TRUST_SERVER_CERTIFICATE = "false"
+      JWT_SECRET                  = var.jwt_secret
+      JWT_ISSUER                  = var.jwt_issuer
     }
   }
 }
