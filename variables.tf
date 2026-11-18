@@ -44,3 +44,8 @@ variable "jwt_audience" {
   type    = string
   default = "GarageFlowServiceClients"
 }
+
+variable "cors_allowed_origins" {
+  type    = list(string)
+  default = ["https://fiapposeaa.github.io", "http://localhost:5173"]
+}

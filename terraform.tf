@@ -130,6 +130,13 @@ resource "aws_lambda_function" "auth" {
 resource "aws_apigatewayv2_api" "auth" {
   name          = "garage-flow-auth-api"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = var.cors_allowed_origins
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["authorization", "content-type"]
+    max_age       = 3600
+  }
 }
 
 resource "aws_apigatewayv2_integration" "auth" {
