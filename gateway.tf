@@ -9,15 +9,19 @@ locals {
   }
 
   backend_routes = {
-    "POST /work-orders"         = "os"
-    "GET /work-orders/{id}"     = "os"
-    "POST /quotes"              = "billing"
-    "GET /quotes/{id}"          = "billing"
-    "POST /quotes/{id}/approve" = "billing"
-    "POST /quotes/{id}/payment" = "billing"
-    "POST /payments/webhook"    = "billing"
-    "POST /executions"          = "execution"
-    "GET /executions/{id}"      = "execution"
+    "POST /work-orders"              = "os"
+    "GET /work-orders/{id}"          = "os"
+    "GET /work-orders/{id}/history"  = "os"
+    "POST /work-orders/{id}/cancel"  = "os"
+    "POST /quotes"                   = "billing"
+    "GET /quotes/{id}"               = "billing"
+    "POST /quotes/{id}/approve"      = "billing"
+    "POST /quotes/{id}/payment"      = "billing"
+    "POST /payments/webhook"         = "billing"
+    "POST /executions"               = "execution"
+    "GET /executions/{id}"           = "execution"
+    "POST /executions/{id}/complete" = "execution"
+    "POST /executions/{id}/fail"     = "execution"
   }
 }
 
