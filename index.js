@@ -52,7 +52,7 @@ exports.handler = async (event) => {
     });
     const result = await pool.request()
       .input('document', sql.VarChar(20), cpf)
-      .query('SELECT TOP 1 id, name, document, isActive FROM customers WHERE document = @document');
+      .query('SELECT TOP 1 Id AS id, Name AS name, Document AS document FROM Customers WHERE Document = @document');
     await pool.close();
     if (result.recordset.length === 0) {
       return {
@@ -62,12 +62,6 @@ exports.handler = async (event) => {
     }
 
     const customer = result.recordset[0];
-    if (customer.isActive === false) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Cliente inativo.' })
-      };
-    }
 
     const token = jwt.sign(
       {
