@@ -30,7 +30,6 @@ exports.handler = async (event) => {
   try {
     const payload = typeof event.body === 'string' ? JSON.parse(event.body) : event;
     const cpf = normalizeCpf(payload.cpf || payload.document);
-    console.log("teste")
     if (!isValidCpf(cpf)) {
       return {
         statusCode: 401,
@@ -51,12 +50,10 @@ exports.handler = async (event) => {
         trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true'
       }
     });
-    console.log("after pool");
     const result = await pool.request()
       .input('document', sql.VarChar(20), cpf)
       .query('SELECT TOP 1 id, name, document, isActive FROM customers WHERE document = @document');
     await pool.close();
-console.log(result);
     if (result.recordset.length === 0) {
       return {
         statusCode: 401,
@@ -82,10 +79,10 @@ console.log(result);
       process.env.JWT_SECRET || 'dev-secret',
       {
         expiresIn: '8h',
-        issuer: process.env.JWT_ISSUER || 'GarageFlowService'
+        issuer: process.env.JWT_ISSUER || 'GarageFlowService',
+        audience: process.env.JWT_AUDIENCE || 'GarageFlowServiceClients'
       }
     );
-    console.info(token);
 
     return {
       statusCode: 200,
@@ -103,7 +100,7 @@ console.log(result);
     console.error(error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message || 'Erro interno na autenticação.' })
+      body: JSON.stringify({ error: 'Erro interno na autenticação.' })
     };
   }
 };

@@ -62,6 +62,40 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+data "aws_vpc" "garage_flow" {
+  tags = {
+    Name = var.vpc_name
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.garage_flow.id]
+  }
+
+  tags = {
+    "kubernetes.io/role/internal-elb" = "1"
+  }
+}
+
+data "aws_db_instance" "sql_server" {
+  db_instance_identifier = var.db_instance_identifier
+}
+
+resource "aws_security_group" "lambda" {
+  name        = "garage-flow-lambda-auth-sg"
+  description = "Egress da Lambda de autenticacao"
+  vpc_id      = data.aws_vpc.garage_flow.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_lambda_function" "auth" {
   function_name    = "garage-flow-auth"
   role             = aws_iam_role.lambda.arn
@@ -73,21 +107,22 @@ resource "aws_lambda_function" "auth" {
   memory_size      = 256
 
   vpc_config {
-    subnet_ids         = var.lambda_subnet_ids
-    security_group_ids = var.lambda_security_group_ids
+    subnet_ids         = data.aws_subnets.private.ids
+    security_group_ids = [aws_security_group.lambda.id]
   }
 
   environment {
     variables = {
-      DB_HOST                     = var.db_host
-      DB_PORT                     = tostring(var.db_port)
+      DB_HOST                     = data.aws_db_instance.sql_server.address
+      DB_PORT                     = tostring(data.aws_db_instance.sql_server.port)
       DB_NAME                     = var.db_name
       DB_USER                     = var.db_user
       DB_PASSWORD                 = var.db_password
       DB_ENCRYPT                  = "true"
-      DB_TRUST_SERVER_CERTIFICATE = "false"
+      DB_TRUST_SERVER_CERTIFICATE = "true"
       JWT_SECRET                  = var.jwt_secret
       JWT_ISSUER                  = var.jwt_issuer
+      JWT_AUDIENCE                = var.jwt_audience
     }
   }
 }

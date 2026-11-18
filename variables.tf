@@ -3,27 +3,22 @@ variable "aws_region" {
   default = "us-east-2"
 }
 
-variable "lambda_subnet_ids" {
-  type        = list(string)
-  description = "Subnets privadas com rota para o RDS"
+variable "vpc_name" {
+  type        = string
+  description = "Tag Name da VPC criada pelo fiap-garageflow-k8s-infra"
+  default     = "garage-flow-vpc"
 }
 
-variable "lambda_security_group_ids" {
-  type        = list(string)
-  description = "Security groups da Lambda"
-}
-
-variable "db_host" {
-  type = string
-}
-
-variable "db_port" {
-  type    = number
-  default = 1433
+variable "db_instance_identifier" {
+  type        = string
+  description = "Identificador da instância RDS criada pelo fiap-garageflow-db-infra"
+  default     = "garage-flow"
 }
 
 variable "db_name" {
-  type = string
+  type        = string
+  description = "Banco com a tabela Customers (criada pelas migrations do fiap-garageflow-api)"
+  default     = "garage-flow"
 }
 
 variable "db_user" {
@@ -43,4 +38,9 @@ variable "jwt_secret" {
 variable "jwt_issuer" {
   type    = string
   default = "GarageFlowService"
+}
+
+variable "jwt_audience" {
+  type    = string
+  default = "GarageFlowServiceClients"
 }
