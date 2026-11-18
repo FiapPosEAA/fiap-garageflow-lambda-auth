@@ -19,6 +19,28 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Datadog opcional: com datadog_api_key vazio, handler, layers e variáveis de ambiente ficam iguais aos de antes.
+locals {
+  lambda_handler  = "index.handler"
+  datadog_enabled = nonsensitive(var.datadog_api_key != "")
+
+  datadog_layers = local.datadog_enabled ? [
+    "arn:aws:lambda:${var.aws_region}:464622532012:layer:Datadog-Node20-x:${var.datadog_node_layer_version}",
+    "arn:aws:lambda:${var.aws_region}:464622532012:layer:Datadog-Extension:${var.datadog_extension_layer_version}",
+  ] : []
+
+  datadog_env = local.datadog_enabled ? {
+    DD_API_KEY                 = var.datadog_api_key
+    DD_SITE                    = var.datadog_site
+    DD_ENV                     = var.datadog_env
+    DD_SERVICE                 = "garage-flow-auth"
+    DD_LAMBDA_HANDLER          = local.lambda_handler
+    DD_TRACE_ENABLED           = "true"
+    DD_LOGS_INJECTION          = "true"
+    DD_SERVERLESS_LOGS_ENABLED = "true"
+  } : {}
+}
+
 data "archive_file" "lambda" {
   type        = "zip"
   source_dir  = path.module
@@ -99,12 +121,13 @@ resource "aws_security_group" "lambda" {
 resource "aws_lambda_function" "auth" {
   function_name    = "garage-flow-auth"
   role             = aws_iam_role.lambda.arn
-  handler          = "index.handler"
+  handler          = local.datadog_enabled ? "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler" : local.lambda_handler
   runtime          = "nodejs20.x"
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
   timeout          = 15
   memory_size      = 256
+  layers           = local.datadog_layers
 
   vpc_config {
     subnet_ids         = data.aws_subnets.private.ids
@@ -112,7 +135,7 @@ resource "aws_lambda_function" "auth" {
   }
 
   environment {
-    variables = {
+    variables = merge({
       DB_HOST                     = data.aws_db_instance.sql_server.address
       DB_PORT                     = tostring(data.aws_db_instance.sql_server.port)
       DB_NAME                     = var.db_name
@@ -123,7 +146,7 @@ resource "aws_lambda_function" "auth" {
       JWT_SECRET                  = var.jwt_secret
       JWT_ISSUER                  = var.jwt_issuer
       JWT_AUDIENCE                = var.jwt_audience
-    }
+    }, local.datadog_env)
   }
 }
 

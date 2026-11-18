@@ -16,6 +16,7 @@ Projeto do Tech Challenge Fase 4 (FIAP Pós Tech): a oficina mecânica, antes um
 - [Como executar](#como-executar)
 - [Dependências e ordem de deploy](#dependências-e-ordem-de-deploy)
 - [Segurança](#segurança)
+- [Observabilidade (Datadog)](#observabilidade-datadog)
 - [Custos e limpeza](#custos-e-limpeza)
 - [Troubleshooting](#troubleshooting)
 - [Status e pendências](#status-e-pendências)
@@ -279,6 +280,17 @@ Ordem recomendada: db-infra -> k8s-infra -> **lambda-auth** -> SQS -> DynamoDB -
 - **TLS com o RDS:** `DB_ENCRYPT=true` e `DB_TRUST_SERVER_CERTIFICATE=false`; a validação do certificado do RDS pode exigir a CA da Amazon RDS no truststore do Node (veja Troubleshooting).
 - **Credenciais AWS do pipeline:** chaves de longa duração em secrets de organização, com as permissões mínimas necessárias (IAM, Lambda, API Gateway, EC2/VPC para ENIs, S3 do state). Não há OIDC.
 - **SCP:** a conta pode ter SCP bloqueando o login no console IAM; use CLI/chaves de acesso e valide as permissões de `iam:CreateRole`/`iam:AttachRolePolicy` antes do primeiro deploy.
+
+## Observabilidade (Datadog)
+
+Opcional: com a variável `datadog_api_key` vazia (padrão), handler, layers e variáveis de ambiente da Lambda ficam exatamente como antes.
+
+- **O que é coletado:** métricas de invocação (duração, erros, cold start), traces da função (incluindo a consulta ao SQL Server via `mssql`) e logs, enviados pelo Datadog Lambda Extension.
+- **Como funciona:** quando `datadog_api_key` é preenchida, o Terraform adiciona os layers públicos `arn:aws:lambda:<região>:464622532012:layer:Datadog-Node20-x:<datadog_node_layer_version>` (padrão 144) e `...:layer:Datadog-Extension:<datadog_extension_layer_version>` (padrão 103), troca o handler para `/opt/nodejs/node_modules/datadog-lambda-js/handler.handler` com `DD_LAMBDA_HANDLER=index.handler` e define `DD_API_KEY`, `DD_SITE`, `DD_ENV=producao` e `DD_SERVICE=garage-flow-auth`. O `index.js` não muda.
+- **Variáveis do Terraform:** `datadog_api_key` (sensível, padrão `""`), `datadog_site` (padrão `datadoghq.com`), `datadog_env`, `datadog_node_layer_version`, `datadog_extension_layer_version`.
+- **Como ligar:** criar o **secret de organização `DD_API_KEY`** (o `cd.yml` passa como `TF_VAR_datadog_api_key`) e, se necessário, a variable `DD_SITE`; depois rodar o CD.
+- **No vídeo:** Serverless > AWS Lambda > `garage-flow-auth` (invocações, cold starts e trace do `POST /auth`).
+- **Limitações:** a API key fica em texto na variável de ambiente da Lambda e no state do Terraform (o recomendado em produção é `DD_API_KEY_SECRET_ARN` com Secrets Manager); a Lambda roda na VPC e depende do NAT para alcançar o Datadog; os layers aumentam um pouco o cold start. O trace da Lambda não se conecta aos traces dos serviços no EKS (o token é emitido e a chamada seguinte é outra requisição).
 
 ## Custos e limpeza
 
